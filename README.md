@@ -1,4 +1,4 @@
-# CalculatorApp 🧮  
+# CalculatorApp ➕
 
 A Windows Forms App (.NET Framework).   
 
