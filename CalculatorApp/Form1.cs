@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -15,26 +16,56 @@ namespace CalculatorApp
         double enterFirstValue;
         double enterSecondValue;
         String op;
+        Queue<string> historyQueue = new Queue<string>(5);
+        bool equalsPress;
+
         public Form1()
         {
             InitializeComponent();
         }
 
+        
 
         private void numberOperator(object sender, EventArgs e)
         {
             Button num = (Button)sender;
 
-            enterFirstValue = Convert.ToDouble(txtResult.Text);
-            op = num.Text;
+
+            int number = 0;
+            if (Int32.TryParse(txtResult.Text, out number))
+            {
+                enterFirstValue = Convert.ToDouble(txtResult.Text);
+            }
+
+            if (!string.IsNullOrEmpty(op))
+            {
+                op = num.Text;
+            }
+            else
+            {
+                op = num.Text;
+            }
+            
             txtResult.Text = "";
+            equalsPress = false;
         }
 
         private void enterNumbers(object sender, EventArgs e)
         {
             Button num = (Button)sender;
+            string pattern = @"[^0-9.]";
+            bool containsNonDigits = Regex.IsMatch(txtResult.Text, pattern);
+
+            if (equalsPress)
+            {
+                txtResult.Text = "";
+            }
 
             if (txtResult.Text == "0")
+            {
+                txtResult.Text = num.Text;
+            }
+            else if (containsNonDigits)
             {
                 txtResult.Text = num.Text;
             }
@@ -56,13 +87,18 @@ namespace CalculatorApp
 
         private void btnEquals_Click(object sender, EventArgs e)
         {
-            enterSecondValue = Convert.ToDouble(txtResult.Text);
+
+            int number = 0;
+            if (Int32.TryParse(txtResult.Text, out number))
+            {
+                enterSecondValue = Convert.ToDouble(txtResult.Text);
+            }
 
             switch (op)
             {
                 case "+":
                     txtResult.Text = (enterFirstValue + enterSecondValue).ToString();
-                break;
+                    break;
 
                 case "-":
                     txtResult.Text = (enterFirstValue - enterSecondValue).ToString();
@@ -88,18 +124,39 @@ namespace CalculatorApp
                     break;
 
                 case "Exp":
-                    double i = Convert.ToDouble(txtResult.Text);
-                    double j;
-                    j = enterSecondValue;
-                    txtResult.Text = Math.Exp(i * Math.Log(j * 4)).ToString();
+                    double a = Convert.ToDouble(txtResult.Text);
+                    double b = enterSecondValue; 
+                    double result = a * Math.Pow(10, b);
+                    txtResult.Text = result.ToString();
                     break;
 
             }
+
+
+
+            if (historyQueue.Count > 7)
+            {
+                historyQueue.Dequeue();
+                string newHistoryItem = $"{enterFirstValue} {op} {enterSecondValue} = {txtResult.Text}";
+                historyQueue.Enqueue(newHistoryItem);
+            }
+            else
+            {
+                string newHistoryItem = $"{enterFirstValue} {op} {enterSecondValue} = {txtResult.Text}";
+                historyQueue.Enqueue(newHistoryItem);
+            }
+
+            
+            string historyText = string.Join(Environment.NewLine, historyQueue.Reverse());
+            historyBox.Text = historyText;
+
+            equalsPress = true;
         }
 
         private void btnClear_Click(object sender, EventArgs e)
         {
             txtResult.Text = "0";
+           
         }
 
         private void btnClearEntry_Click(object sender, EventArgs e)
@@ -112,6 +169,11 @@ namespace CalculatorApp
 
             firstNum = "";
             secondNum = "";
+
+            historyQueue.Clear();
+            string historyText = string.Join(Environment.NewLine, historyQueue.Reverse());
+            historyBox.Text = historyText;
+
         }
 
         private void btnPM_Click(object sender, EventArgs e)
@@ -135,20 +197,21 @@ namespace CalculatorApp
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            this.Width = 343;
+            this.Width = 596;
             txtResult.Width = 302;
+            historyBox.Text = "There is no history yet.";
 
         }
 
         private void standardToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            this.Width = 343;
+            this.Width = 596;
             txtResult.Width = 302;
         }
 
         private void scientificToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            this.Width = 686;
+            this.Width = 937;
             txtResult.Width = 646;
         }
 
@@ -156,7 +219,7 @@ namespace CalculatorApp
         {
             DialogResult exitCalc;
 
-            exitCalc = MessageBox.Show("Confirm if you want to exit", "Scientific Calculator", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            exitCalc = MessageBox.Show("Confirm if you want to exit", "Calculator", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
             if (exitCalc == DialogResult.Yes)
             {
@@ -285,7 +348,10 @@ namespace CalculatorApp
 
         private void btnDec_Click(object sender, EventArgs e)
         {
-            
+            decimal num = Convert.ToDecimal(txtResult.Text);
+            txtResult.Text = Convert.ToString(num);
         }
+
+       
     }
 }
